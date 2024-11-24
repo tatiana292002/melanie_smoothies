@@ -30,12 +30,12 @@ if ingredients_list:
         # Obtener la información nutricional de la fruta desde la API
         smoothiefroot_response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{fruit_chosen}")
         
-        # Mostrar los datos obtenidos de la API como un DataFrame
+        # Verificar si la fruta está en la base de datos
         if smoothiefroot_response.status_code == 200:
             fruit_data = smoothiefroot_response.json()
             st.dataframe(fruit_data, use_container_width=True)
         else:
-            st.error(f"Error retrieving data for {fruit_chosen}")
+            st.warning(f"Sorry, the fruit '{fruit_chosen}' is not in our database.")
     
     st.write(f"Your selected ingredients: {ingredients_string}")
 
@@ -49,5 +49,8 @@ time_to_insert = st.button('Submit Order')
 if time_to_insert:
     session.sql(my_insert_stmt).collect()
     st.success('Your Smoothie is ordered!', icon="✅")
+
+# Agregar un mensaje informativo para frutas no encontradas en la base de datos
+st.markdown("<h3 style='text-align: center; color: orange;'>Some fruits in our list are not in the Fruityvice database.</h3>", unsafe_allow_html=True)
 
 
