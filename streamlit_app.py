@@ -14,12 +14,15 @@ st.write("The name on your Smoothie will be:", name_on_order)
 cnx = st.connection("snowflake")
 session = cnx.session()
 
-
 my_dataframe = session.table("smoothies.public.fruit_options").select(col('SEARCH ON'))
 st.dataframe(data=my_dataframe, use_container_width=True)
 st.stop()
 
-# Mostrar la lista de frutas en un multiselect
+
+pd_df=my_dataframe(pd_df)
+st.stop()
+
+
 ingredients_list = st.multiselect('Choose up to 5 ingredients:', my_dataframe.to_pandas()['FRUIT_NAME'])
 
 # Mostrar la información nutricional de cada fruta seleccionada
@@ -29,7 +32,9 @@ if ingredients_list:
     for fruit_chosen in ingredients_list:
         st.subheader(f'{fruit_chosen} Nutrition Information')
         
-        # Obtener la información nutricional de la fruta desde la API
+        search_on=pd_df.loc[pd_df['FRUIT_NAME'] == fruit_chosen, 'SEARCH_ON'].iloc[0]
+        st.write('The search value for ', fruit_chosen,' is ', search_on, '.')
+
         smoothiefroot_response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{fruit_chosen}")
         
         # Verificar si la fruta está en la base de datos
