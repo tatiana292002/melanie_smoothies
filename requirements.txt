@@ -1,2 +1,2 @@
 snowflake-snowpark-python
-streamlit=
+streamlit
