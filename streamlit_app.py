@@ -19,12 +19,13 @@ st.write('The name on your Smoothie will be:', name_on_order)
 cnx = st.connection("snowflake")
 session = cnx.session()
 
-# Fetch data from Snowflake
+
 my_dataframe = session.table("smoothies.public.fruit_options").select(col("FRUIT_NAME"), col("SEARCH_ON"))
 
 # Convert Snowpark DataFrame to Pandas DataFrame
 pd_df = my_dataframe.to_pandas()
-st.dataframe(pd_df)  # Display the fruit options to the user
+st.dataframe(pd_df)  
+st.stop()
 
 # Multiselect for ingredients
 ingredients_list = st.multiselect(
