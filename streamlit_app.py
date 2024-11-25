@@ -20,51 +20,49 @@ cnx = st.connection("snowflake")
 session = cnx.session()
 
 # Fetch data from Snowflake
-my_dataframe = session.table("smoothies.public.fruit_options").select(col("FRUIT_NAME"), col('SEARCH_ON'))
+my_dataframe = session.table("smoothies.public.fruit_options").select(col("FRUIT_NAME"), col("SEARCH_ON"))
 
 # Convert Snowpark DataFrame to Pandas DataFrame
 pd_df = my_dataframe.to_pandas()
+st.dataframe(pd_df)  # Display the fruit options to the user
 
 # Multiselect for ingredients
 ingredients_list = st.multiselect(
     'Choose up to 5 ingredients:',
-    pd_df['FRUIT_NAME'].tolist(),  # Use a list of fruit names
+    pd_df['FRUIT_NAME'].tolist(),  # Populate multiselect with fruit names
     max_selections=5
 )
 
-# Display nutrition information and collect the ingredients string
-ingredients_string = ''  # Initialize the ingredients string
-
-if ingredients_list:
+# Submit button
+if st.button('Submit Order') and ingredients_list:
+    ingredients_string = ', '.join(ingredients_list)  # Concatenate selected ingredients
+    st.write(f"You've chosen: {ingredients_string}")
+    
+    # Loop through selected fruits to fetch nutrition information
     for fruit_chosen in ingredients_list:
-        # Concatenate selected ingredients to the string
-        ingredients_string += fruit_chosen + ', '
-
-        # Get the SEARCH_ON value for the chosen fruit
+        # Retrieve the corresponding SEARCH_ON value for the selected fruit
         search_on = pd_df.loc[pd_df['FRUIT_NAME'] == fruit_chosen, 'SEARCH_ON'].iloc[0]
-
-        # Display the selected fruit's nutrition information
+        
         st.subheader(f"{fruit_chosen} Nutrition Information")
         try:
-            # Make the API request
-            fruityvice_response = requests.get(f"https://fruityvice.com/api/fruit/{search_on}")
+            # Fetch data from SmoothieFroot API
+            smoothiefroot_response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{search_on}")
             
-            # Check the response status and content type
-            if fruityvice_response.status_code == 200 and 'application/json' in fruityvice_response.headers.get('Content-Type', ''):
+            if smoothiefroot_response.status_code == 200 and 'application/json' in smoothiefroot_response.headers.get('Content-Type', ''):
                 # Parse and display the JSON response
-                fv_df = st.dataframe(data=fruityvice_response.json(), use_container_width=True)
+                st.json(smoothiefroot_response.json())  # Display raw JSON response
             else:
-                # Log unexpected responses
-                st.error(f"Could not fetch data for {fruit_chosen}. API responded with status: {fruityvice_response.status_code}")
-                st.text(f"Response content: {fruityvice_response.text}")
-        except requests.exceptions.JSONDecodeError as e:
-            st.error(f"Error decoding JSON for {fruit_chosen}: {e}")
-        except Exception as e:
-            st.error(f"An error occurred for {fruit_chosen}: {e}")
-
-# Button to submit the order
-if st.button("Submit Order"):
-    if not name_on_order:
-        st.error("Please provide a name for your Smoothie.")
-    elif not ingredients_list:
-        st.error("Please select at least one ingredient for your Smoothie.")
+                # Log unexpected responses and provide a fallback message
+                st.warning(f"Could not fetch data for {fruit_chosen}. SmoothieFroot API is currently unavailable.")
+        except requests.exceptions.RequestException as e:
+            # Handle generic request exceptions
+            st.error(f"An error occurred while fetching data for {fruit_chosen}: {e}")
+    
+    # Insert the order into the Snowflake table
+    my_insert_stmt = f"""INSERT INTO smoothies.public.orders(ingredients, name_on_order)
+                         VALUES ('{ingredients_string}', '{name_on_order}')"""
+    try:
+        session.sql(my_insert_stmt).collect()
+        st.success("Order has been placed successfully!")
+    except Exception as e:
+        st.error(f"Error inserting order: {e}")
