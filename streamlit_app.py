@@ -38,33 +38,9 @@ if ingredients_list:
     ingredients_string = '' 
     
     for fruit_chosen in ingredients_list:
-        # Concatenate selected ingredients to the string
-        ingredients_string += fruit_chosen + ', '
+ingredients_string + fruit_chosen +
+search_on=pd_df.loc [pd_df ['FRUIT_NAME'] == fruit_chosen, 'SEARCH_ON'].iloc[0] st.write('The search value for ', fruit_chosen,' is ', search_on, '.')
+st.subheader (fruit_chosen Nutrition Information')
+fruityvice response = requests.get("https://fruityvice.com/api/fruit/" + fruit_chosen)
 
-        search_on=pd_df.loc[pd_df['FRUIT_NAME'] == fruit_chosen, 'SEARCH_ON'].iloc[0]
-        st.write('The search value for ', fruit_chosen,' is ', search_on, '.')
-
-        st.subheader(f"{fruit_chosen} Nutrition Information")
-        try:
-            # Make API request using the SEARCH_ON value
-            response = requests.get(f"https://fruityvice.com/api/fruit/{search_on}")
-            if response.status_code == 200:
-                # Display the API response as a DataFrame
-                nutrition_data = response.json()
-                st.write(nutrition_data)  # Display raw JSON data for now
-            else:
-                st.warning(f"Could not fetch data for {fruit_chosen}. API responded with status: {response.status_code}")
-        except requests.exceptions.RequestException as e:
-            st.error(f"Error fetching data for {fruit_chosen}: {e}")
-
-    # Insert order into Snowflake table
-    ingredients_string = ingredients_string.strip(', ')  # Remove the trailing comma and space
-    my_insert_stmt = f"""INSERT INTO smoothies.public.orders(ingredients, name_on_order)
-                         VALUES ('{ingredients_string}', '{name_on_order}')"""
-    try:
-        session.sql(my_insert_stmt).collect()
-        st.success("Order has been placed successfully!")
-    except Exception as e:
-        st.error(f"Error inserting order: {e}")
-
-
+      
