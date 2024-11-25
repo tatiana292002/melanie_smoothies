@@ -24,25 +24,47 @@ my_dataframe = session.table("smoothies.public.fruit_options").select(col("FRUIT
 
 # Convert Snowpark DataFrame to Pandas DataFrame
 pd_df = my_dataframe.to_pandas()
-#st.dataframe(pd_df)
-#st.stop
 
-
+# Multiselect for ingredients
 ingredients_list = st.multiselect(
-    'Choose up to 5 ingredients:'
-    , my_dataframe
-    , max_selections=5
+    'Choose up to 5 ingredients:',
+    pd_df['FRUIT_NAME'].tolist(),  # Use a list of fruit names
+    max_selections=5
 )
 
+# Display nutrition information and collect the ingredients string
+ingredients_string = ''  # Initialize the ingredients string
+
 if ingredients_list:
-    ingredients_string = '' 
-    
     for fruit_chosen in ingredients_list:
-            ingredients_string + fruit_chosen + ''
-            search_on=pd_df.loc [pd_df ['FRUIT_NAME'] == fruit_chosen, 'SEARCH_ON'].iloc[0] 
-            #st.write('The search value for ', fruit_chosen,' is ', search_on, '.')
-        
-            st.subheader (fruit_chosen + 'Nutrition Information')
-            fruityvice_response = requests.get("https://fruityvice.com/api/fruit/" + search_on) 
-            fv_df = st.dataframe (data=fruityvice_response.json(), use_container_width=True)
-    #st.write(ingredients_string)
+        # Concatenate selected ingredients to the string
+        ingredients_string += fruit_chosen + ', '
+
+        # Get the SEARCH_ON value for the chosen fruit
+        search_on = pd_df.loc[pd_df['FRUIT_NAME'] == fruit_chosen, 'SEARCH_ON'].iloc[0]
+
+        # Display the selected fruit's nutrition information
+        st.subheader(f"{fruit_chosen} Nutrition Information")
+        try:
+            # Make the API request
+            fruityvice_response = requests.get(f"https://fruityvice.com/api/fruit/{search_on}")
+            
+            # Check the response status and content type
+            if fruityvice_response.status_code == 200 and 'application/json' in fruityvice_response.headers.get('Content-Type', ''):
+                # Parse and display the JSON response
+                fv_df = st.dataframe(data=fruityvice_response.json(), use_container_width=True)
+            else:
+                # Log unexpected responses
+                st.error(f"Could not fetch data for {fruit_chosen}. API responded with status: {fruityvice_response.status_code}")
+                st.text(f"Response content: {fruityvice_response.text}")
+        except requests.exceptions.JSONDecodeError as e:
+            st.error(f"Error decoding JSON for {fruit_chosen}: {e}")
+        except Exception as e:
+            st.error(f"An error occurred for {fruit_chosen}: {e}")
+
+# Button to submit the order
+if st.button("Submit Order"):
+    if not name_on_order:
+        st.error("Please provide a name for your Smoothie.")
+    elif not ingredients_list:
+        st.error("Please select at least one ingredient for your Smoothie.")
