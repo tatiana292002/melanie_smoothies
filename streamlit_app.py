@@ -33,36 +33,15 @@ ingredients_list = st.multiselect(
     max_selections=5
 )
 
-# Submit button
-if st.button('Submit Order') and ingredients_list:
-    ingredients_string = ', '.join(ingredients_list)  # Concatenate selected ingredients
-    st.write(f"You've chosen: {ingredients_string}")
+if ingredients_list:
+    ingredients_string = ''
     
-    # Loop through selected fruits to fetch nutrition information
     for fruit_chosen in ingredients_list:
-        # Retrieve the corresponding SEARCH_ON value for the selected fruit
-        search_on = pd_df.loc[pd_df['FRUIT_NAME'] == fruit_chosen, 'SEARCH_ON'].iloc[0]
+        ingredients_string += fruit_chosen + ''
+        search_on=pd_df.loc [pd_df ['FRUIT_NAME'] == fruit_chosen, 'SEARCH_ON'].iloc[0]     
+        #st.write('The search value for ', fruit_chosen,' is ', search_on, '.')
         
-        st.subheader(f"{fruit_chosen} Nutrition Information")
-        try:
-            # Fetch data from SmoothieFroot API
-            smoothiefroot_response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{search_on}")
-            
-            if smoothiefroot_response.status_code == 200 and 'application/json' in smoothiefroot_response.headers.get('Content-Type', ''):
-                # Parse and display the JSON response
-                st.json(smoothiefroot_response.json())  # Display raw JSON response
-            else:
-                # Log unexpected responses and provide a fallback message
-                st.warning(f"Could not fetch data for {fruit_chosen}. SmoothieFroot API is currently unavailable.")
-        except requests.exceptions.RequestException as e:
-            # Handle generic request exceptions
-            st.error(f"An error occurred while fetching data for {fruit_chosen}: {e}")
-    
-    # Insert the order into the Snowflake table
-    my_insert_stmt = f"""INSERT INTO smoothies.public.orders(ingredients, name_on_order)
-                         VALUES ('{ingredients_string}', '{name_on_order}')"""
-    try:
-        session.sql(my_insert_stmt).collect()
-        st.success("Order has been placed successfully!")
-    except Exception as e:
-        st.error(f"Error inserting order: {e}")
+        st.subheader (fruit_chosen + 'Nutrition Information')
+        fruityvice_response = requests.get("https://fruityvice.com/api/fruit/" + search_on) 
+        fv_df = st.dataframe (data=fruityvice_response.json(), use_container_width=True)
+        #st.write(ingredients_string)
