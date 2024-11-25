@@ -48,13 +48,14 @@ if ingredients_list:
         st.subheader(f"{fruit_chosen} Nutrition Information")
         try:
             # Make API request using the SEARCH_ON value
-            smoothiefroot_response = requests.get(f"https://fruityvice.com/api/fruit/{search_on}")
-            if smoothiefroot_response.status_code == 200:
+            response = requests.get(f"https://fruityvice.com/api/fruit/{search_on}")
+            if response.status_code == 200:
                 # Display the API response as a DataFrame
-                sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
+                nutrition_data = response.json()
+                st.write(nutrition_data)  # Display raw JSON data for now
             else:
-                st.error(f"Could not fetch data for {fruit_chosen}. API responded with status: {smoothiefroot_response.status_code}")
-        except Exception as e:
+                st.warning(f"Could not fetch data for {fruit_chosen}. API responded with status: {response.status_code}")
+        except requests.exceptions.RequestException as e:
             st.error(f"Error fetching data for {fruit_chosen}: {e}")
 
     # Insert order into Snowflake table
@@ -66,3 +67,5 @@ if ingredients_list:
         st.success("Order has been placed successfully!")
     except Exception as e:
         st.error(f"Error inserting order: {e}")
+
+
