@@ -62,13 +62,7 @@ if st.button('Submit Order'):
         st.error('Please select ingredients and enter a name on your smoothie order.')
 
 
-insert_order(['apple', 'lime', 'ximenia'], 'Kevin', False)
 
-# Order for Divya
-insert_order(['Pitaya', 'Guava', 'Figs', 'Jackfruit', 'Blueberries'], 'Divya', True)
-
-# Order for Xi
-insert_order(['vanilla', 'nectarine'], 'Xi', True)
     
   
 
